@@ -65,16 +65,29 @@ class UserSchema(Schema):
         return User(**data)
     
     @pre_load(pass_many=True)
-    def adjust_enum_load(self, data, _):
+    def adjust_enum_load(self, data, *_):
         if not (self.context and 'source' in self.context):
             raise MarshmallowError('Must provide source in context dict')
         self.fields['permission_level'].by_value = self.context['source'] == 'external'
         return data
         
     @pre_dump(pass_many=True)
-    def adjust_enum_dump(self, data, _):
+    def adjust_enum_dump(self, data, *_):
         if not (self.context and 'source' in self.context):
-            raise Exception('Must provide source in context dict')
-        self.fields['permission_level'].by_value = self.context['source'] != 'external'
+            raise MarshmallowError('Must provide source in context dict')
+        self.fields['permission_level'].by_value = self.context['source'] == 'internal'
         return data
+
+load_from_external = UserSchema(context={'source': 'external'})
+print(load_from_external.load({'username': 'justanr', 'permission_level': 2}).data)
+# User(username='justanr', permission_level=<PermissionEnum.admin: 2>)
+print(load_from_external.dump(User(username='justanr', permission_level=PermissionEnum.admin).data)
+# {'username': 'justanr', 'permission_level': 'admin'}
+
+load_from_internal = UserSchema(context={'source': 'internal'})
+print(load_from_internal.load({'username': 'justanr', 'permission_level': 'admin'}).data)
+# User(username='justanr', permission_level=<PermissionEnum.admin: 2>)
+print(load_from_internal.dump(User(username='justanr', permission_level=PermissionEnum.admin).data)
+# {'username': 'justanr', 'permission_level': 2}
 ```
+
