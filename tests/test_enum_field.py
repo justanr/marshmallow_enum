@@ -20,8 +20,14 @@ class TestEnumFieldByName(object):
     def test_serialize_enum(self):
         assert self.field._serialize(EnumTester.one, None, object()) == 'one'
 
+    def test_serialize_none(self):
+        assert self.field._serialize(None, None, object()) is None
+
     def test_deserialize_enum(self):
         assert self.field._deserialize('one', None, {}) == EnumTester.one
+
+    def test_deserialize_none(self):
+        assert self.field._deserialize(None, None, {}) is None
 
     def test_deserialize_nonexistent_member(self):
         with pytest.raises(ValidationError):
@@ -37,6 +43,10 @@ class TestEnumFieldValue(object):
         field = EnumField(EnumTester, by_value=True)
         assert field._serialize(EnumTester.one, None, object()) == 1
 
+    def test_serialize_none(self):
+        field = EnumField(EnumTester, by_value=True)
+        assert field._serialize(None, None, object()) is None
+
     def test_deserialize_nonexistent_member(self):
         field = EnumField(EnumTester, by_value=True)
 
@@ -46,10 +56,11 @@ class TestEnumFieldValue(object):
 class TestEnumFieldAsSchemaMember(object):
     class EnumSchema(Schema):
         enum = EnumField(EnumTester)
+        none = EnumField(EnumTester)
 
     def test_enum_field_load(self):
         serializer = self.EnumSchema()
-        data = serializer.load({'enum': 'one'}).data
+        data = serializer.load({'enum': 'one', 'none': None}).data
 
         assert data['enum'] == EnumTester.one
 
@@ -63,10 +74,11 @@ class TestEnumFieldAsSchemaMember(object):
 class TestEnumByValueAsSchemaMember(object):
     class EnumSchema(Schema):
         enum = EnumField(EnumTester, by_value=True)
+        none = EnumField(EnumTester, by_value=True)
 
     def test_enum_field_load(self):
         serializer = self.EnumSchema()
-        data = serializer.load({'enum': 1}).data
+        data = serializer.load({'enum': 1, 'none': None}).data
 
         assert data['enum'] == EnumTester.one
 
