@@ -14,13 +14,17 @@ class EnumField(Field):
         super(EnumField, self).__init__(*args, **kwargs)
 
     def _serialize(self, value, attr, obj):
-        if self.by_value:
+        if value is None:
+            return None
+        elif self.by_value:
             return value.value
         else:
             return value.name
 
     def _deserialize(self, value, attr, data):
-        if self.by_value:
+        if value is None:
+            return None
+        elif self.by_value:
             return self._deserialize_by_value(value, attr, data)
         else:
             return self._deserialize_by_name(value, attr, data)
