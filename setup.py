@@ -37,7 +37,7 @@ class ToxTest(TestCommand):
 if __name__ == '__main__':
     setup(
         name='marshmallow-enum',
-        version='0.1',
+        version='1.0',
         author='Alec Nikolas Reiter',
         author_email='alecreiter@gmail.com',
         description='Enum field for Marshmallow',
