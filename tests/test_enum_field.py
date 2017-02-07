@@ -5,6 +5,7 @@ from enum import Enum
 from collections import namedtuple
 import pytest
 
+
 class EnumTester(Enum):
     one = 1
     two = 2
@@ -33,6 +34,7 @@ class TestEnumFieldByName(object):
         with pytest.raises(ValidationError):
             self.field._deserialize('fred', None, {})
 
+
 class TestEnumFieldValue(object):
     def test_deserialize_enum(self):
         field = EnumField(EnumTester, by_value=True)
@@ -52,6 +54,7 @@ class TestEnumFieldValue(object):
 
         with pytest.raises(ValidationError):
             field._deserialize(4, None, {})
+
 
 class TestEnumFieldAsSchemaMember(object):
     class EnumSchema(Schema):
@@ -121,3 +124,34 @@ class TestEnumFieldByValueInListField(object):
         data = serializer.dump(SomeObj([EnumTester.one, EnumTester.two])).data
 
         assert data['enum'] == [1, 2]
+
+
+class TestCustomErrorMessage(object):
+    def test_custom_error_in_deserialize_by_value(self):
+        field = EnumField(
+            EnumTester,
+            by_value=True,
+            error="{input} must be one of {choices}"
+        )
+        with pytest.raises(ValidationError) as excinfo:
+            field._deserialize(4, None, {})
+
+        expected = "4 must be one of 1, 2, 3"
+        assert expected in str(excinfo.value)
+
+    def test_custom_error_in_deserialize_by_name(self):
+        field = EnumField(
+            EnumTester,
+            error="{input} must be one of {choices}"
+        )
+        with pytest.raises(ValidationError) as excinfo:
+            field._deserialize('four', None, {})
+        expected = 'four must be one of one, two, three'
+        assert expected in str(excinfo)
+
+    def test_uses_default_error_if_no_custom_provided(self):
+        field = EnumField(EnumTester, by_value=True)
+        with pytest.raises(ValidationError) as excinfo:
+            field._deserialize(4, None, {})
+        expected = 'Invalid enum value 4'
+        assert expected in str(excinfo.value)

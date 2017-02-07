@@ -1,16 +1,17 @@
 from marshmallow.fields import Field
-from marshmallow.exceptions import ValidationError
+from marshmallow import ValidationError
 
 
 class EnumField(Field):
     default_error_messages = {
-        'by_name': 'Invalid enum member {name}',
-        'by_value': 'Invalid enum value {value}'
+        'by_name': 'Invalid enum member {input}',
+        'by_value': 'Invalid enum value {input}'
     }
 
-    def __init__(self, enum, by_value=False, *args, **kwargs):
+    def __init__(self, enum, by_value=False, error='',  *args, **kwargs):
         self.enum = enum
         self.by_value = by_value
+        self.error = error
         super(EnumField, self).__init__(*args, **kwargs)
 
     def _serialize(self, value, attr, obj):
@@ -32,11 +33,29 @@ class EnumField(Field):
     def _deserialize_by_value(self, value, attr, data):
         try:
             return self.enum(value)
-        except ValueError as e:
-            self.fail('by_value', value=value)
+        except ValueError:
+            self.fail('by_value', input=value)
 
     def _deserialize_by_name(self, value, attr, data):
         try:
             return getattr(self.enum, value)
-        except AttributeError as e:
-            self.fail('by_name', name=value)
+        except AttributeError:
+            self.fail('by_name', input=value)
+
+    def fail(self, key, **kwargs):
+        # depercation of name/value fail inputs
+        if 'name' in kwargs:
+            kwargs['input'] = kwargs['name']
+        elif 'value' in kwargs:
+            kwargs['input'] = kwargs['value']
+
+        if self.error:
+            if self.by_value:
+                kwargs['choices'] = ', '.join([str(mem.value) for mem in self.enum])
+            else:
+                kwargs['choices'] = ', '.join([mem.name for mem in self.enum])
+            msg = self.error.format(**kwargs)
+            print(msg)
+            raise ValidationError(msg)
+        else:
+            super(EnumField, self).fail(key, **kwargs)
