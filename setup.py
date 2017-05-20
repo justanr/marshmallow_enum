@@ -12,7 +12,7 @@ REQUIRES = ['marshmallow>=2.0.0'] + extra_requires
 if __name__ == '__main__':
     setup(
         name='marshmallow-enum',
-        version='1.1',
+        version='1.2',
         author='Alec Nikolas Reiter',
         author_email='alecreiter@gmail.com',
         description='Enum field for Marshmallow',
