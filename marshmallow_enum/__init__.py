@@ -55,7 +55,6 @@ class EnumField(Field):
             else:
                 kwargs['choices'] = ', '.join([mem.name for mem in self.enum])
             msg = self.error.format(**kwargs)
-            print(msg)
             raise ValidationError(msg)
         else:
             super(EnumField, self).fail(key, **kwargs)
