@@ -1,11 +1,18 @@
 from marshmallow.fields import Field
 from marshmallow import ValidationError
 
+try:
+    # ugh Python 2
+    str_types = (str, unicode)
+except:
+    str_types = (str,)
+
 
 class EnumField(Field):
     default_error_messages = {
         'by_name': 'Invalid enum member {input}',
-        'by_value': 'Invalid enum value {input}'
+        'by_value': 'Invalid enum value {input}',
+        'must_be_string': 'Enum name must be string'
     }
 
     def __init__(self, enum, by_value=False, error='',  *args, **kwargs):
@@ -37,6 +44,9 @@ class EnumField(Field):
             self.fail('by_value', input=value)
 
     def _deserialize_by_name(self, value, attr, data):
+        if not isinstance(value, str_types):
+            self.fail('must_be_string')
+
         try:
             return getattr(self.enum, value)
         except AttributeError:
