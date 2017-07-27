@@ -45,7 +45,7 @@ class EnumField(Field):
 
     def _deserialize_by_name(self, value, attr, data):
         if not isinstance(value, str_types):
-            self.fail('must_be_string')
+            self.fail('must_be_string', input=value)
 
         try:
             return getattr(self.enum, value)
