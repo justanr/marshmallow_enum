@@ -4,6 +4,9 @@ from marshmallow.fields import List
 from enum import Enum
 from collections import namedtuple
 import pytest
+import sys
+
+PY2 = sys.version_info.major == 2
 
 
 class EnumTester(Enum):
@@ -155,3 +158,39 @@ class TestCustomErrorMessage(object):
             field._deserialize(4, None, {})
         expected = 'Invalid enum value 4'
         assert expected in str(excinfo.value)
+
+
+class TestRegressions(object):
+    @pytest.mark.parametrize('bad_value', [
+        object, object(), [], {}, 1, 3.4, False, ()
+    ])
+    def test_by_name_must_be_string(self, bad_value):
+        class SomeEnum(Enum):
+            red = 0
+            yellow = 1
+            green = 2
+
+        class SomeSchema(Schema):
+            colors = EnumField(
+                SomeEnum,
+                by_value=False,
+            )
+
+        with pytest.raises(ValidationError) as excinfo:
+            SomeSchema(strict=True).load({'colors': bad_value})
+
+
+        assert 'must be string' in  str(excinfo.value)
+
+    @pytest.mark.skipif(PY2, reason='py2 strings are bytes')
+    def test_by_name_cannot_be_bytes(self):
+        class SomeEnum(Enum):
+            a = 1
+
+        class SomeSchema(Schema):
+            f = EnumField(SomeEnum, by_value=False)
+
+        with pytest.raises(ValidationError) as excinfo:
+            SomeSchema(strict=True).load({'f': b'a'})
+
+        assert 'must be string' in str(excinfo.value)
