@@ -1,4 +1,5 @@
 Version 1.4
 ===========
 
+* Deprecate the `{choices}`, `{name}` and `{value}` format keys for custom error messages
 * Allow configure loading and dumping independently
