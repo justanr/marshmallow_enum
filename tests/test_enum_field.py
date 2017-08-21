@@ -1,4 +1,5 @@
 import sys
+import warnings
 from collections import namedtuple
 from enum import Enum
 
@@ -255,3 +256,15 @@ class TestLoadDumpConfigBehavior(object):
         expected = {'f': 1}
         actual = schema.dump(schema.load({'f': 'one'}).data).data
         assert actual == expected
+
+
+@pytest.mark.parametrize('format', ['{name}', '{value}'])
+def test_old_error_format_inputs_are_deprecated(format):
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter('always', DeprecationWarning)
+        EnumField(EnumTester, error=format)
+        warnings.simplefilter('default', DeprecationWarning)
+
+    assert len(w) == 1
+    assert issubclass(w[0].category, DeprecationWarning)
+    assert "use {input}" in str(w[0].message)
