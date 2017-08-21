@@ -1,93 +1,75 @@
 # marshmallow-enum
 
-Enum serializer/deserializer for use with Marshmallow.
+Enum field for use with Marshmallow.
 
-Making use of the field is straightforward, it does depend on an existing Enum. By default, the field will serialize and deserialize based on the *names* in Enum:
+## Installation
+
+```bash
+pip install --user marshmallow_enum
+```
+
+If you're on a version before 3.4, you'll also need to install `enum34`.
+
+## Using The Field
+
+To make use of the field, you must have an existing Enum:
 
 ```python
-from marshmallow import Schema, post_load
-from marshmallow_enum import EnumField
 from enum import Enum
 
 
-class PermissionEnum(Enum):
-    guest = 0
-    member = 1
-    admin = 2
-    
-    
-class UserSchema(Schema):
-    permission_level = EnumField(PermissionEnum)
-    
-    class Meta:
-        additional = ['username']
-        
-    @post_load
-    def make_user(self, data):
-        return User(**data)
-
-print(UserSchema().dump(User(username='justanr', permission_level=PermissionEnum.admin)).data)
-# {'username': 'justanr', 'permission_level': 'admin'}
-
-print(UserSchema().load({'username': 'justanr', 'permission_level': 'admin'}).data)
-# User(username='justanr', permission_level=<PermissionEnum.admin: 2>)
+class StopLight(Enum):
+    green = 1
+    yellow = 2
+    red = 3
 ```
 
-Alternatively, you can choose to serialize or deserialize based on a *value* in the Enum as well:
+Then, declare it as a field in a schema:
 
 ```python
-class UserSchema(Schema):
-    permission_level = EnumField(PermissionEnum, by_value=True)
-    
-    class Meta:
-        additional = ['username']
-        
-print(UserSchema().dump(User(username='justanr', permission_level=PermissionEnum.admin)).data)
-# {'username': 'justanr', 'permission_level': 2}
+from marshmallow import Schema
+from marshmallow_enum import EnumField
 
-print(UserSchema().load({'username': 'justanr', 'permission_level': 2}).data)
-# User(username='justanr', permission_level=<PermissionEnum.admin: 2>)
+
+class TrafficStop(Schema):
+    light_color = EnumField(StopLight)
 ```
 
-Additionally, if you need to translate between two APIs -- for example an external API that provides some data in integers that actually represent something else, and repackaging it for use in your code -- you can make use of the `pre_load` and `pre_dump` mechanisms to do something a little scary:
+By default, the field will load and dump based on the _name_ given to an enum value.
 
 ```python
-from marshmallow import pre_load, pre_dump, post_load
+schema = TrafficStop()
+schema.dump({'light_color': EnumField.red}).data
+# {'light_color': 'red'}
 
-class UserSchema(Schema):
-    permission_level = EnumField(PermissionEnum)
-    
-    class Meta:
-        additional = ['username']
-    
-    @post_load
-    def make_user(self, data):
-        return User(**data)
-    
-    @pre_load(pass_many=True)
-    def adjust_enum_load(self, data, *_):
-        if not (self.context and 'source' in self.context):
-            raise MarshmallowError('Must provide source in context dict')
-        self.fields['permission_level'].by_value = self.context['source'] == 'external'
-        return data
-        
-    @pre_dump(pass_many=True)
-    def adjust_enum_dump(self, data, *_):
-        if not (self.context and 'source' in self.context):
-            raise MarshmallowError('Must provide source in context dict')
-        self.fields['permission_level'].by_value = self.context['source'] == 'internal'
-        return data
-
-load_from_external = UserSchema(context={'source': 'external'})
-print(load_from_external.load({'username': 'justanr', 'permission_level': 2}).data)
-# User(username='justanr', permission_level=<PermissionEnum.admin: 2>)
-print(load_from_external.dump(User(username='justanr', permission_level=PermissionEnum.admin).data)
-# {'username': 'justanr', 'permission_level': 'admin'}
-
-load_from_internal = UserSchema(context={'source': 'internal'})
-print(load_from_internal.load({'username': 'justanr', 'permission_level': 'admin'}).data)
-# User(username='justanr', permission_level=<PermissionEnum.admin: 2>)
-print(load_from_internal.dump(User(username='justanr', permission_level=PermissionEnum.admin).data)
-# {'username': 'justanr', 'permission_level': 2}
+schema.load({'light_color': 'red'}).data
+# {'light_color': EnumField.red}
 ```
 
+### Customizing loading and dumping behavior
+
+To customize how an enum is serialized or deserialized, there are three options:
+
+-   Setting `by_value=True`. This will cause both dumping and loading to use the value of the enum.
+-   Setting `load_by=EnumField.VALUE`. This will cause loading to use the value of the enum.
+-   Setting `dump_by=EnumField.VALUE`. This will cause dumping to use the value of the enum.
+
+If either `load_by` or `dump_by` are unset, they will follow from `by_value`.
+
+Additionally, there is `EnumField.NAME` to be explicit about the load and dump behavior, this
+is the same as leaving both `by_value` and either `load_by` and/or `dump_by` unset.
+
+### Custom Error Message
+
+A custom error message can be provided via the `error` keyword argument. It can accept three
+format values:
+
+-   `{input}`: The value provided to the schema field
+-   `{names}`: The names of the individual enum members
+-   `{values}`: The values of the individual enum members
+
+Previously, the following inputs were also available but are deprecated and will be removed in 1.6:
+
+-   `{name}`
+-   `{value}`
+-   `{choices}`
