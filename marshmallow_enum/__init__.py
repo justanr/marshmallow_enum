@@ -32,9 +32,10 @@ class EnumField(Field):
         self.enum = enum
         self.by_value = by_value
 
-        if error and any(old in error for old in ('{name', '{value')):
+        if error and any(old in error for old in ('{name', '{value', '{choices')):
             warnings.warn(
-                "'name' and 'value' fail inputs are deprecated, use {input} instead",
+                "'name', 'value', and 'choices' fail inputs are deprecated,"
+                "use input, names and values instead",
                 DeprecationWarning,
                 stacklevel=2
             )
@@ -96,11 +97,14 @@ class EnumField(Field):
             self.fail('by_name', input=value, name=value)
 
     def fail(self, key, **kwargs):
+        kwargs['values'] = ', '.join([str(mem.value) for mem in self.enum])
+        kwargs['names'] = ', '.join([mem.name for mem in self.enum])
+
         if self.error:
             if self.by_value:
-                kwargs['choices'] = ', '.join([str(mem.value) for mem in self.enum])
+                kwargs['choices'] = kwargs['values']
             else:
-                kwargs['choices'] = ', '.join([mem.name for mem in self.enum])
+                kwargs['choices'] = kwargs['names']
             msg = self.error.format(**kwargs)
             raise ValidationError(msg)
         else:

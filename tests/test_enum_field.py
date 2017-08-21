@@ -258,7 +258,7 @@ class TestLoadDumpConfigBehavior(object):
         assert actual == expected
 
 
-@pytest.mark.parametrize('format', ['{name}', '{value}'])
+@pytest.mark.parametrize('format', ['{name}', '{value}', '{choices}'])
 def test_old_error_format_inputs_are_deprecated(format):
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter('always', DeprecationWarning)
@@ -267,4 +267,6 @@ def test_old_error_format_inputs_are_deprecated(format):
 
     assert len(w) == 1
     assert issubclass(w[0].category, DeprecationWarning)
-    assert "use {input}" in str(w[0].message)
+    assert "input" in str(w[0].message)
+    assert "values" in str(w[0].message)
+    assert "names" in str(w[0].message)
