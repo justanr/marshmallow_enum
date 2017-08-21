@@ -1,4 +1,6 @@
+import warnings
 from enum import Enum
+
 from marshmallow import ValidationError
 from marshmallow.fields import Field
 
@@ -29,6 +31,14 @@ class EnumField(Field):
     ):
         self.enum = enum
         self.by_value = by_value
+
+        if error and any(old in error for old in ('{name', '{value')):
+            warnings.warn(
+                "'name' and 'value' fail inputs are deprecated, use {input} instead",
+                DeprecationWarning,
+                stacklevel=2
+            )
+
         self.error = error
 
         if load_by is None:
@@ -74,24 +84,18 @@ class EnumField(Field):
         try:
             return self.enum(value)
         except ValueError:
-            self.fail('by_value', input=value)
+            self.fail('by_value', input=value, value=value)
 
     def _deserialize_by_name(self, value, attr, data):
         if not isinstance(value, str_types):
-            self.fail('must_be_string', input=value)
+            self.fail('must_be_string', input=value, name=value)
 
         try:
             return getattr(self.enum, value)
         except AttributeError:
-            self.fail('by_name', input=value)
+            self.fail('by_name', input=value, name=value)
 
     def fail(self, key, **kwargs):
-        # depercation of name/value fail inputs
-        if 'name' in kwargs:
-            kwargs['input'] = kwargs['name']
-        elif 'value' in kwargs:
-            kwargs['input'] = kwargs['value']
-
         if self.error:
             if self.by_value:
                 kwargs['choices'] = ', '.join([str(mem.value) for mem in self.enum])
