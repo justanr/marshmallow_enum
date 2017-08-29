@@ -19,12 +19,12 @@ with open('CHANGELOG', 'r') as f:
 if __name__ == '__main__':
     setup(
         name='marshmallow-enum',
-        version='1.4',
+        version='1.4.1',
         author='Alec Nikolas Reiter',
         author_email='alecreiter@gmail.com',
         description='Enum field for Marshmallow',
         long_description=readme + '\n\n' + changelog,
-        package_data={'': ['LICENSE']},
+        package_data={'': ['LICENSE', 'README.md', 'CHANGELOG']},
         include_package_data=True,
         license='MIT',
         packages=['marshmallow_enum'],
