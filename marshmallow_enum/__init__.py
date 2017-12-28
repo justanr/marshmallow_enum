@@ -1,6 +1,9 @@
+from __future__ import unicode_literals
+
 import warnings
 from enum import Enum
 
+import six
 from marshmallow import ValidationError
 from marshmallow.fields import Field
 
@@ -88,7 +91,7 @@ class EnumField(Field):
             self.fail('by_value', input=value, value=value)
 
     def _deserialize_by_name(self, value, attr, data):
-        if not isinstance(value, str_types):
+        if not isinstance(value, six.string_types):
             self.fail('must_be_string', input=value, name=value)
 
         try:
@@ -97,7 +100,7 @@ class EnumField(Field):
             self.fail('by_name', input=value, name=value)
 
     def fail(self, key, **kwargs):
-        kwargs['values'] = ', '.join([str(mem.value) for mem in self.enum])
+        kwargs['values'] = ', '.join([six.text_type(mem.value) for mem in self.enum])
         kwargs['names'] = ', '.join([mem.name for mem in self.enum])
 
         if self.error:
