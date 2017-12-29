@@ -1,17 +1,20 @@
 from __future__ import unicode_literals
 
+import sys
 import warnings
 from enum import Enum
 
-import six
 from marshmallow import ValidationError
 from marshmallow.fields import Field
 
-try:
-    # ugh Python 2
-    str_types = (str, unicode)  # noqa: F821
-except:
-    str_types = (str, )
+PY2 = sys.version_info.major == 2
+# ugh Python 2
+if PY2:
+    string_types = (str, unicode)  # noqa: F821
+    text_type = unicode
+else:
+    string_types = (str, )
+    text_type = str
 
 
 class LoadDumpOptions(Enum):
@@ -91,7 +94,7 @@ class EnumField(Field):
             self.fail('by_value', input=value, value=value)
 
     def _deserialize_by_name(self, value, attr, data):
-        if not isinstance(value, six.string_types):
+        if not isinstance(value, string_types):
             self.fail('must_be_string', input=value, name=value)
 
         try:
@@ -100,7 +103,7 @@ class EnumField(Field):
             self.fail('by_name', input=value, name=value)
 
     def fail(self, key, **kwargs):
-        kwargs['values'] = ', '.join([six.text_type(mem.value) for mem in self.enum])
+        kwargs['values'] = ', '.join([text_type(mem.value) for mem in self.enum])
         kwargs['names'] = ', '.join([mem.name for mem in self.enum])
 
         if self.error:
