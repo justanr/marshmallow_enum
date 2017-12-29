@@ -11,7 +11,7 @@ PY2 = sys.version_info.major == 2
 # ugh Python 2
 if PY2:
     string_types = (str, unicode)  # noqa: F821
-    text_type = unicode
+    text_type = unicode  # noqa: F821
 else:
     string_types = (str, )
     text_type = str
