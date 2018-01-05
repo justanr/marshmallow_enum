@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 import sys
 import warnings
 from collections import namedtuple
@@ -270,3 +273,29 @@ def test_old_error_format_inputs_are_deprecated(format):
     assert "input" in str(w[0].message)
     assert "values" in str(w[0].message)
     assert "names" in str(w[0].message)
+
+
+class TestUnicodeEnumValues(object):
+    class UnicodeEnumTester(Enum):
+        a = 'aæaф'
+        b = 'basd'
+        c = 'c僀23'
+
+    values = 'aæaф, basd, c僀23'
+
+    def test_user_error(self):
+        with pytest.raises(ValidationError) as exc_info:
+            EnumField(self.UnicodeEnumTester, error='{values}').fail('error')
+
+        assert exc_info.value.messages[0] == self.values
+
+    def test_by_value_error(self):
+        class MyEnumField(EnumField):
+            default_error_messages = {
+                'by_value': '{values}'
+            }
+
+        with pytest.raises(ValidationError) as exc_info:
+            EnumField(self.UnicodeEnumTester, error='{values}').fail('by_value')
+
+        assert exc_info.value.messages[0] == self.values
