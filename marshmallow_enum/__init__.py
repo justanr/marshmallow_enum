@@ -33,7 +33,15 @@ class EnumField(Field):
     }
 
     def __init__(
-            self, enum, by_value=False, load_by=None, dump_by=None, error='', *args, **kwargs
+        self,
+        enum,
+        by_value=False,
+        load_by=None,
+        dump_by=None,
+        error='',
+        allow_none=None,
+        *args,
+        **kwargs
     ):
         self.enum = enum
         self.by_value = by_value
@@ -69,7 +77,7 @@ class EnumField(Field):
         self.load_by = load_by
         self.dump_by = dump_by
 
-        super(EnumField, self).__init__(*args, **kwargs)
+        super(EnumField, self).__init__(allow_none=allow_none, *args, **kwargs)
 
     def _serialize(self, value, attr, obj):
         if value is None:
