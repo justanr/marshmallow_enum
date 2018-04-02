@@ -29,7 +29,8 @@ class EnumField(Field):
     default_error_messages = {
         'by_name': 'Invalid enum member {input}',
         'by_value': 'Invalid enum value {input}',
-        'must_be_string': 'Enum name must be string'
+        'must_be_string': 'Enum name must be string',
+        'must_be_list': 'Enum must be a list of strings'
     }
 
     def __init__(
@@ -102,13 +103,23 @@ class EnumField(Field):
             self.fail('by_value', input=value, value=value)
 
     def _deserialize_by_name(self, value, attr, data):
+        # str
         if not isinstance(value, string_types):
             self.fail('must_be_string', input=value, name=value)
+        else:
+            try:
+                return getattr(self.enum, value)
+            except AttributeError:
+                self.fail('by_name', input=value, name=value)
 
-        try:
-            return getattr(self.enum, value)
-        except AttributeError:
-            self.fail('by_name', input=value, name=value)
+        # list
+        if not isinstance(value, list):
+            self.fail('must_be_list', input=value, name=value)
+        else:
+            try:
+                return [getattr(self.enum, v) for v in value]
+            except AttributeError:
+                self.fail('by_name', input=value, name=value)
 
     def fail(self, key, **kwargs):
         kwargs['values'] = ', '.join([text_type(mem.value) for mem in self.enum])
