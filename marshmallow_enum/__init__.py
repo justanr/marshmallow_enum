@@ -71,6 +71,11 @@ class EnumField(Field):
 
         super(EnumField, self).__init__(*args, **kwargs)
 
+        self.metadata['enum'] = [
+            e.value if self.by_value else e.name
+            for e in self.enum
+        ]
+
     def _serialize(self, value, attr, obj):
         if value is None:
             return None
