@@ -69,3 +69,6 @@ Session.vim
 .netrwhist
 *~
 
+.pytest_cache
+.vscode
+.python-version
