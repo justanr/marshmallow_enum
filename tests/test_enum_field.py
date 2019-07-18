@@ -7,11 +7,13 @@ from collections import namedtuple
 from enum import Enum
 
 import pytest
+import marshmallow
 from marshmallow import Schema, ValidationError
 from marshmallow.fields import List
 from marshmallow_enum import EnumField
 
 PY2 = sys.version_info.major == 2
+MARSHMALLOW_VERSION_MAJOR = int(marshmallow.__version__.split('.')[0])
 
 
 class EnumTester(Enum):
@@ -21,6 +23,12 @@ class EnumTester(Enum):
 
 
 SomeObj = namedtuple('SingleEnum', ['enum'])
+
+
+def get_marshmallow_data(data):
+    if MARSHMALLOW_VERSION_MAJOR < 3:
+        return data.data
+    return data
 
 
 class TestEnumFieldByName(object):
@@ -73,15 +81,15 @@ class TestEnumFieldAsSchemaMember(object):
         enum = EnumField(EnumTester)
         none = EnumField(EnumTester)
 
+    @pytest.mark.skipif(MARSHMALLOW_VERSION_MAJOR == 3, reason='Schema is strict by default')
     def test_enum_field_load(self):
         serializer = self.EnumSchema()
-        data = serializer.load({'enum': 'one', 'none': None}).data
-
+        data = get_marshmallow_data(serializer.load({'enum': 'one', 'none': None}))
         assert data['enum'] == EnumTester.one
 
     def test_enum_field_dump(self):
         serializer = self.EnumSchema()
-        data = serializer.dump(SomeObj(EnumTester.one)).data
+        data = get_marshmallow_data(serializer.dump(SomeObj(EnumTester.one)))
 
         assert data['enum'] == 'one'
 
@@ -92,15 +100,15 @@ class TestEnumByValueAsSchemaMember(object):
         enum = EnumField(EnumTester, by_value=True)
         none = EnumField(EnumTester, by_value=True)
 
+    @pytest.mark.skipif(MARSHMALLOW_VERSION_MAJOR == 3, reason='Schema is strict by default')
     def test_enum_field_load(self):
         serializer = self.EnumSchema()
-        data = serializer.load({'enum': 1, 'none': None}).data
-
+        data = get_marshmallow_data(serializer.load({'enum': 1, 'none': None}))
         assert data['enum'] == EnumTester.one
 
     def test_enum_field_dump(self):
         serializer = self.EnumSchema()
-        data = serializer.dump(SomeObj(EnumTester.one)).data
+        data = get_marshmallow_data(serializer.dump(SomeObj(EnumTester.one)))
 
         assert data['enum'] == 1
 
@@ -112,13 +120,13 @@ class TestEnumFieldInListField(object):
 
     def test_enum_list_load(self):
         serializer = self.ListEnumSchema()
-        data = serializer.load({'enum': ['one', 'two']}).data
+        data = get_marshmallow_data(serializer.load({'enum': ['one', 'two']}))
 
         assert data['enum'] == [EnumTester.one, EnumTester.two]
 
     def test_enum_list_dump(self):
         serializer = self.ListEnumSchema()
-        data = serializer.dump(SomeObj([EnumTester.one, EnumTester.two])).data
+        data = get_marshmallow_data(serializer.dump(SomeObj([EnumTester.one, EnumTester.two])))
 
         assert data['enum'] == ['one', 'two']
 
@@ -130,13 +138,13 @@ class TestEnumFieldByValueInListField(object):
 
     def test_enum_list_load(self):
         serializer = self.ListEnumSchema()
-        data = serializer.load({'enum': [1, 2]}).data
+        data = get_marshmallow_data(serializer.load({'enum': [1, 2]}))
 
         assert data['enum'] == [EnumTester.one, EnumTester.two]
 
     def test_enum_list_dump(self):
         serializer = self.ListEnumSchema()
-        data = serializer.dump(SomeObj([EnumTester.one, EnumTester.two])).data
+        data = get_marshmallow_data(serializer.dump(SomeObj([EnumTester.one, EnumTester.two])))
 
         assert data['enum'] == [1, 2]
 
@@ -181,9 +189,12 @@ class TestRegressions(object):
                 SomeEnum,
                 by_value=False,
             )
+            if MARSHMALLOW_VERSION_MAJOR < 3:
+                class Meta:
+                    strict = True
 
         with pytest.raises(ValidationError) as excinfo:
-            SomeSchema(strict=True).load({'colors': bad_value})
+            SomeSchema().load({'colors': bad_value})
 
         assert 'must be string' in str(excinfo.value)
 
@@ -195,9 +206,12 @@ class TestRegressions(object):
 
         class SomeSchema(Schema):
             f = EnumField(SomeEnum, by_value=False)
+            if MARSHMALLOW_VERSION_MAJOR < 3:
+                class Meta:
+                    strict = True
 
         with pytest.raises(ValidationError) as excinfo:
-            SomeSchema(strict=True).load({'f': b'a'})
+            SomeSchema().load({'f': b'a'})
 
         assert 'must be string' in str(excinfo.value)
 
@@ -227,7 +241,7 @@ class TestLoadDumpConfigBehavior(object):
             f = EnumField(EnumTester, dump_by=EnumField.VALUE)
 
         expected = {'f': 1}
-        actual = SomeSchema().dump({'f': EnumTester.one}).data
+        actual = get_marshmallow_data(SomeSchema().dump({'f': EnumTester.one}))
         assert expected == actual
 
     def test_loads_to_value_when_configured_to(self):
@@ -236,7 +250,7 @@ class TestLoadDumpConfigBehavior(object):
             f = EnumField(EnumTester, load_by=EnumField.VALUE)
 
         expected = {'f': EnumTester.one}
-        actual = SomeSchema().load({'f': 1}).data
+        actual = get_marshmallow_data(SomeSchema().load({'f': 1}))
         assert expected == actual
 
     def test_load_by_value_dump_by_name(self):
@@ -247,7 +261,8 @@ class TestLoadDumpConfigBehavior(object):
         schema = SomeSchema()
 
         expected = {'f': 'one'}
-        actual = schema.dump(schema.load({'f': 1}).data).data
+        loaded = get_marshmallow_data(schema.load({'f': 1}))
+        actual = get_marshmallow_data(schema.dump(loaded))
         assert actual == expected
 
     def test_load_by_name_dump_by_value(self):
@@ -257,7 +272,8 @@ class TestLoadDumpConfigBehavior(object):
 
         schema = SomeSchema()
         expected = {'f': 1}
-        actual = schema.dump(schema.load({'f': 'one'}).data).data
+        loaded = get_marshmallow_data(schema.load({'f': 'one'}))
+        actual = get_marshmallow_data(schema.dump(loaded))
         assert actual == expected
 
 
