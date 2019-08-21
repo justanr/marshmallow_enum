@@ -43,7 +43,7 @@ schema.dump({'light_color': EnumField.red}).data
 # {'light_color': 'red'}
 
 schema.load({'light_color': 'red'}).data
-# {'light_color': EnumField.red}
+# {'light_color': StopLight.red}
 ```
 
 ### Customizing loading and dumping behavior
