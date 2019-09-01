@@ -46,6 +46,12 @@ class TestEnumFieldByName(object):
         with pytest.raises(ValidationError):
             self.field._deserialize('fred', None, {})
 
+    def test_enum_metadata(self):
+        assert 'enum' in self.field.metadata
+        assert 'one' in self.field.metadata['enum']
+        assert 'two' in self.field.metadata['enum']
+        assert 'three' in self.field.metadata['enum']
+
 
 class TestEnumFieldValue(object):
 
@@ -67,6 +73,13 @@ class TestEnumFieldValue(object):
 
         with pytest.raises(ValidationError):
             field._deserialize(4, None, {})
+
+    def test_enum_metadata(self):
+        field = EnumField(EnumTester, by_value=True)
+        assert 'enum' in field.metadata
+        assert 1 in field.metadata['enum']
+        assert 2 in field.metadata['enum']
+        assert 3 in field.metadata['enum']
 
 
 class TestEnumFieldAsSchemaMember(object):
