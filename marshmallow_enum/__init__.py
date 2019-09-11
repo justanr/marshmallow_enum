@@ -114,4 +114,4 @@ class EnumField(Field):
             msg = self.error.format(**kwargs)
             raise ValidationError(msg)
         else:
-            super(EnumField, self).fail(key, **kwargs)
+            raise super(EnumField, self).make_error(key, **kwargs)
