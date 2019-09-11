@@ -33,9 +33,9 @@ class EnumField(Field):
     }
 
     def __init__(
-            self, enum, by_value=False, load_by=None, dump_by=None, error='', *args, **kwargs
+            self, enum_type, by_value=False, load_by=None, dump_by=None, error='', *args, **kwargs
     ):
-        self.enum = enum
+        self.enum = enum_type
         self.by_value = by_value
 
         if error and any(old in error for old in ('name}', 'value}', 'choices}')):
