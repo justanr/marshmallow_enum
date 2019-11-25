@@ -79,7 +79,7 @@ class EnumField(Field):
 
         super(EnumField, self).__init__(allow_none=allow_none, *args, **kwargs)
 
-    def _serialize(self, value, attr, obj):
+    def _serialize(self, value, attr, obj, **kwargs):
         if value is None:
             return None
         elif self.dump_by == LoadDumpOptions.value:
@@ -87,7 +87,7 @@ class EnumField(Field):
         else:
             return value.name
 
-    def _deserialize(self, value, attr, data):
+    def _deserialize(self, value, attr, data, **kwargs):
         if value is None:
             return None
         elif self.load_by == LoadDumpOptions.value:
