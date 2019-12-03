@@ -4,8 +4,10 @@ import sys
 import warnings
 from enum import Enum
 
+import pkg_resources
 from marshmallow import ValidationError
 from marshmallow.fields import Field
+from packaging import version
 
 PY2 = sys.version_info.major == 2
 # ugh Python 2
@@ -15,6 +17,11 @@ if PY2:
 else:
     string_types = (str, )
     text_type = str
+
+
+MARSHMALLOW2 = (version.parse("2.0.0") <=
+                version.parse(pkg_resources.get_distribution("marshmallow").version) <
+                version.parse("3.0.0"))
 
 
 class LoadDumpOptions(Enum):
@@ -114,4 +121,7 @@ class EnumField(Field):
             msg = self.error.format(**kwargs)
             raise ValidationError(msg)
         else:
-            raise super(EnumField, self).make_error(key, **kwargs)
+            if MARSHMALLOW2:
+                raise super(EnumField, self).fail(key, **kwargs)
+            else:
+                raise super(EnumField, self).make_error(key, **kwargs)
