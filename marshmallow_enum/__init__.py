@@ -91,18 +91,18 @@ class EnumField(Field):
         try:
             return self.enum(value)
         except ValueError:
-            self.fail('by_value', input=value, value=value)
+            raise self.make_error('by_value', input=value, value=value)
 
     def _deserialize_by_name(self, value, attr, data):
         if not isinstance(value, string_types):
-            self.fail('must_be_string', input=value, name=value)
+            raise self.make_error('must_be_string', input=value, name=value)
 
         try:
             return getattr(self.enum, value)
         except AttributeError:
-            self.fail('by_name', input=value, name=value)
+            raise self.make_error('by_name', input=value, name=value)
 
-    def fail(self, key, **kwargs):
+    def make_error(self, key, **kwargs):
         kwargs['values'] = ', '.join([text_type(mem.value) for mem in self.enum])
         kwargs['names'] = ', '.join([mem.name for mem in self.enum])
 
@@ -112,6 +112,6 @@ class EnumField(Field):
             else:
                 kwargs['choices'] = kwargs['names']
             msg = self.error.format(**kwargs)
-            raise ValidationError(msg)
+            return ValidationError(msg)
         else:
-            super(EnumField, self).fail(key, **kwargs)
+            return super(EnumField, self).make_error(key, **kwargs)
