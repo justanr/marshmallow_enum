@@ -2,7 +2,6 @@ from __future__ import unicode_literals
 
 import sys
 import warnings
-from enum import Enum
 
 from marshmallow import ValidationError
 from marshmallow.fields import Field
