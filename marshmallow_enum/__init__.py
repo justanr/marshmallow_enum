@@ -17,25 +17,15 @@ else:
     text_type = str
 
 
-class LoadDumpOptions(Enum):
-    value = 1
-    name = 0
-
-
 class EnumField(Field):
-    VALUE = LoadDumpOptions.value
-    NAME = LoadDumpOptions.name
-
     default_error_messages = {
         'by_name': 'Invalid enum member {input}',
         'by_value': 'Invalid enum value {input}',
         'must_be_string': 'Enum name must be string'
     }
 
-    def __init__(
-            self, enum, by_value=False, load_by=None, dump_by=None, error='', *args, **kwargs
-    ):
-        self.enum = enum
+    def __init__(self, enum_type, by_value=True, error="", *args, **kwargs):
+        self.enum = enum_type
         self.by_value = by_value
 
         if error and any(old in error for old in ('name}', 'value}', 'choices}')):
@@ -48,27 +38,6 @@ class EnumField(Field):
 
         self.error = error
 
-        if load_by is None:
-            load_by = LoadDumpOptions.value if by_value else LoadDumpOptions.name
-
-        if not isinstance(load_by, Enum) or load_by not in LoadDumpOptions:
-            raise ValueError(
-                'Invalid selection for load_by must be EnumField.VALUE or EnumField.NAME, got {}'.
-                format(load_by)
-            )
-
-        if dump_by is None:
-            dump_by = LoadDumpOptions.value if by_value else LoadDumpOptions.name
-
-        if not isinstance(dump_by, Enum) or dump_by not in LoadDumpOptions:
-            raise ValueError(
-                'Invalid selection for load_by must be EnumField.VALUE or EnumField.NAME, got {}'.
-                format(dump_by)
-            )
-
-        self.load_by = load_by
-        self.dump_by = dump_by
-
         super(EnumField, self).__init__(*args, **kwargs)
 
         self.metadata['enum'] = [
@@ -79,7 +48,7 @@ class EnumField(Field):
     def _serialize(self, value, attr, obj):
         if value is None:
             return None
-        elif self.dump_by == LoadDumpOptions.value:
+        elif self.by_value:
             return value.value
         else:
             return value.name
@@ -87,7 +56,7 @@ class EnumField(Field):
     def _deserialize(self, value, attr, data, **kwargs):
         if value is None:
             return None
-        elif self.load_by == LoadDumpOptions.value:
+        elif self.by_value:
             return self._deserialize_by_value(value, attr, data)
         else:
             return self._deserialize_by_name(value, attr, data)
