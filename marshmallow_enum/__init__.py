@@ -100,10 +100,10 @@ class EnumField(Field):
                 self.metadata['type'] = 'boolean'
             elif all(isinstance(v, str) for v in values):
                 self.metadata['type'] = 'string'
-        self.metadata['enum'] = [
+        self.metadata['enum'] = sorted([
             e.value if self.by_value else e.name
             for e in self.enum
-        ]
+        ])
 
     def _serialize(self, value, attr, obj):
         if value is None:
