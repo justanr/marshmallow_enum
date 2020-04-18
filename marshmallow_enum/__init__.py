@@ -39,6 +39,18 @@ class EnumField(Field):
 
         super(EnumField, self).__init__(*args, **kwargs)
 
+        if not self.by_value:
+            self.metadata['type'] = 'string'
+        elif self.by_value:
+            values = [e.value for e in self.enum if e.value is not None]
+            if all(isinstance(v, int) for v in values):
+                self.metadata['type'] = 'integer'
+            elif all(isinstance(v, (float, int)) for v in values):
+                self.metadata['type'] = 'number'
+            elif all(isinstance(v, bool) for v in values):
+                self.metadata['type'] = 'boolean'
+            elif all(isinstance(v, str) for v in values):
+                self.metadata['type'] = 'string'
         self.metadata['enum'] = [
             e.value if self.by_value else e.name
             for e in self.enum

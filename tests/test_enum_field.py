@@ -51,6 +51,7 @@ class TestEnumFieldByName(object):
         assert 'one' in self.field.metadata['enum']
         assert 'two' in self.field.metadata['enum']
         assert 'three' in self.field.metadata['enum']
+        assert self.field.metadata['type'] == 'string'
 
 
 class TestEnumFieldValue(object):
@@ -80,6 +81,7 @@ class TestEnumFieldValue(object):
         assert 1 in field.metadata['enum']
         assert 2 in field.metadata['enum']
         assert 3 in field.metadata['enum']
+        assert field.metadata['type'] == 'integer'
 
 
 class TestEnumFieldAsSchemaMember(object):
