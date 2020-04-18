@@ -28,7 +28,7 @@ SomeObj = namedtuple('SingleEnum', ['enum'])
 class TestEnumFieldByName(object):
 
     def setup(self):
-        self.field = EnumField(EnumTester)
+        self.field = EnumField(EnumTester, by_value=False)
 
     def test_serialize_enum(self):
         assert self.field._serialize(EnumTester.one, None, object()) == 'one'
@@ -45,6 +45,13 @@ class TestEnumFieldByName(object):
     def test_deserialize_nonexistent_member(self):
         with pytest.raises(ValidationError):
             self.field._deserialize('fred', None, {})
+
+    def test_enum_metadata(self):
+        assert 'enum' in self.field.metadata
+        assert 'one' in self.field.metadata['enum']
+        assert 'two' in self.field.metadata['enum']
+        assert 'three' in self.field.metadata['enum']
+        assert self.field.metadata['type'] == 'string'
 
 
 class TestEnumFieldValue(object):
@@ -68,12 +75,20 @@ class TestEnumFieldValue(object):
         with pytest.raises(ValidationError):
             field._deserialize(4, None, {})
 
+    def test_enum_metadata(self):
+        field = EnumField(EnumTester, by_value=True)
+        assert 'enum' in field.metadata
+        assert 1 in field.metadata['enum']
+        assert 2 in field.metadata['enum']
+        assert 3 in field.metadata['enum']
+        assert field.metadata['type'] == 'integer'
+
 
 class TestEnumFieldAsSchemaMember(object):
 
     class EnumSchema(Schema):
-        enum = EnumField(EnumTester)
-        none = EnumField(EnumTester)
+        enum = EnumField(EnumTester, by_value=False)
+        none = EnumField(EnumTester, by_value=False)
 
     def test_enum_field_load(self):
         serializer = self.EnumSchema()
@@ -122,7 +137,7 @@ class TestEnumByValueAsSchemaMember(object):
 class TestEnumFieldInListField(object):
 
     class ListEnumSchema(Schema):
-        enum = List(EnumField(EnumTester))
+        enum = List(EnumField(EnumTester, by_value=False))
 
     def test_enum_list_load(self):
         serializer = self.ListEnumSchema()
@@ -188,7 +203,7 @@ class TestCustomErrorMessage(object):
         else:
             err_tpl = "{input} must be one of {names}"
 
-        field = EnumField(EnumTester, error=err_tpl)
+        field = EnumField(EnumTester, error=err_tpl, by_value=False)
         with pytest.raises(ValidationError) as excinfo:
             field._deserialize('four', None, {})
         expected = 'four must be one of one, two, three'
@@ -247,28 +262,10 @@ class TestRegressions(object):
 
 
 class TestLoadDumpConfigBehavior(object):
-
-    def test_load_and_dump_by_default_to_by_value(self):
-        f = EnumField(EnumTester)
-        assert f.load_by == EnumField.NAME
-        assert f.dump_by == EnumField.NAME
-
-    def test_load_by_raises_if_not_proper_value(self):
-        with pytest.raises(ValueError) as excinfo:
-            EnumField(EnumTester, load_by='lol')
-
-        assert 'Invalid selection' in str(excinfo.value)
-
-    def test_dump_by_raises_if_not_proper_value(self):
-        with pytest.raises(ValueError) as excinfo:
-            EnumField(EnumTester, dump_by='lol')
-
-        assert 'Invalid selection' in str(excinfo.value)
-
     def test_dumps_to_value_when_configured_to(self):
 
         class SomeSchema(Schema):
-            f = EnumField(EnumTester, dump_by=EnumField.VALUE)
+            f = EnumField(EnumTester, by_value=True)
 
         expected = {'f': 1}
         actual = SomeSchema().dump({'f': EnumTester.one})
@@ -280,7 +277,7 @@ class TestLoadDumpConfigBehavior(object):
     def test_loads_to_value_when_configured_to(self):
 
         class SomeSchema(Schema):
-            f = EnumField(EnumTester, load_by=EnumField.VALUE)
+            f = EnumField(EnumTester, by_value=True)
 
         expected = {'f': EnumTester.one}
         actual = SomeSchema().load({'f': 1})
@@ -288,37 +285,6 @@ class TestLoadDumpConfigBehavior(object):
             actual = actual.data
 
         assert expected == actual
-
-    def test_load_by_value_dump_by_name(self):
-
-        class SomeSchema(Schema):
-            f = EnumField(EnumTester, load_by=EnumField.VALUE, dump_by=EnumField.NAME)
-
-        schema = SomeSchema()
-
-        expected = {'f': 'one'}
-
-        if MARSHMALLOW_VERSION_MAJOR < 3:
-            actual = schema.dump(schema.load({'f': 1}).data).data
-        else:
-            actual = schema.dump(schema.load({'f': 1}))
-
-        assert actual == expected
-
-    def test_load_by_name_dump_by_value(self):
-
-        class SomeSchema(Schema):
-            f = EnumField(EnumTester, load_by=EnumField.NAME, dump_by=EnumField.VALUE)
-
-        schema = SomeSchema()
-        expected = {'f': 1}
-
-        if MARSHMALLOW_VERSION_MAJOR < 3:
-            actual = schema.dump(schema.load({'f': 'one'}).data).data
-        else:
-            actual = schema.dump(schema.load({'f': 'one'}))
-
-        assert actual == expected
 
 
 @pytest.mark.parametrize('format', ['{name}', '{value}', '{choices}'])
