@@ -46,7 +46,7 @@ class EnumField(Field):
         self.enum = enum
         self.by_value = by_value
 
-        if error and any(old in error for old in ('{name', '{value', '{choices')):
+        if error and any(old in error for old in ('name}', 'value}', 'choices}')):
             warnings.warn(
                 "'name', 'value', and 'choices' fail inputs are deprecated,"
                 "use input, names and values instead",
@@ -59,7 +59,7 @@ class EnumField(Field):
         if load_by is None:
             load_by = LoadDumpOptions.value if by_value else LoadDumpOptions.name
 
-        if load_by not in LoadDumpOptions:
+        if not isinstance(load_by, Enum) or load_by not in LoadDumpOptions:
             raise ValueError(
                 'Invalid selection for load_by must be EnumField.VALUE or EnumField.NAME, got {}'.
                 format(load_by)
@@ -68,7 +68,7 @@ class EnumField(Field):
         if dump_by is None:
             dump_by = LoadDumpOptions.value if by_value else LoadDumpOptions.name
 
-        if dump_by not in LoadDumpOptions:
+        if not isinstance(dump_by, Enum) or dump_by not in LoadDumpOptions:
             raise ValueError(
                 'Invalid selection for load_by must be EnumField.VALUE or EnumField.NAME, got {}'.
                 format(dump_by)
@@ -87,7 +87,7 @@ class EnumField(Field):
         else:
             return value.name
 
-    def _deserialize(self, value, attr, data):
+    def _deserialize(self, value, attr, data, **kwargs):
         if value is None:
             return None
         elif self.load_by == LoadDumpOptions.value:
