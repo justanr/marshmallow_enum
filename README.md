@@ -59,6 +59,9 @@ If either `load_by` or `dump_by` are unset, they will follow from `by_value`.
 Additionally, there is `EnumField.NAME` to be explicit about the load and dump behavior, this
 is the same as leaving both `by_value` and either `load_by` and/or `dump_by` unset.
 
+If you want to ensure that the `load_by` and `dump_by` behaviour is always the same you can use
+the `StrictEnumField`.
+
 ### Custom Error Message
 
 A custom error message can be provided via the `error` keyword argument. It can accept three

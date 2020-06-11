@@ -115,3 +115,18 @@ class EnumField(Field):
             raise ValidationError(msg)
         else:
             raise super(EnumField, self).make_error(key, **kwargs)
+
+
+class StrictEnumField(EnumField):
+    """
+    Like EnumField but will always load and dump using the same behaviour
+    Ignores any `load_by` or `dump_by` parameters passed to it
+    """
+
+    def __init__(
+            self, enum, by_value=False, error='', *args, **kwargs
+    ):
+
+        kwargs.pop('load_by', None)
+        kwargs.pop('dump_by', None)
+        super(StrictEnumField, self).__init__(enum, by_value, *args, **kwargs)
