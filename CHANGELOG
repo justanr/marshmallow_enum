@@ -1,3 +1,9 @@
+Version 2.0 (pending)
+=====================
+
+* Raise validation error the proper way (#44, thanks anordin95!)
+
+
 Version 1.5
 ===========
 
