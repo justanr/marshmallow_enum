@@ -10,7 +10,7 @@ import pytest
 import marshmallow
 from marshmallow import Schema, ValidationError
 from marshmallow.fields import List
-from marshmallow_enum import EnumField
+from marshmallow_enum import EnumField, StrictEnumField
 
 PY2 = sys.version_info.major == 2
 MARSHMALLOW_VERSION_MAJOR = int(marshmallow.__version__.split('.')[0])
@@ -359,3 +359,73 @@ class TestUnicodeEnumValues(object):
             EnumField(self.UnicodeEnumTester, error='{values}').fail('by_value')
 
         assert exc_info.value.messages[0] == self.values
+
+
+class TestStrictEnumFieldByName(object):
+
+    def setup(self):
+        self.field = StrictEnumField(EnumTester)
+
+    def test_serialize_enum(self):
+        assert self.field._serialize(EnumTester.one, None, object()) == 'one'
+
+    def test_serialize_none(self):
+        assert self.field._serialize(None, None, object()) is None
+
+    def test_deserialize_enum(self):
+        assert self.field._deserialize('one', None, {}) == EnumTester.one
+
+    def test_deserialize_none(self):
+        assert self.field._deserialize(None, None, {}) is None
+
+    def test_deserialize_nonexistent_member(self):
+        with pytest.raises(ValidationError):
+            self.field._deserialize('fred', None, {})
+
+
+class TestStrictEnumFieldLoadAndDumpByValueIgnored(object):
+
+    def setup(self):
+        self.field = StrictEnumField(
+            EnumTester,
+            load_by=EnumField.VALUE,
+            dump_by=EnumField.VALUE
+        )
+
+    def test_serialize_enum(self):
+        assert self.field._serialize(EnumTester.one, None, object()) == 'one'
+
+    def test_serialize_none(self):
+        assert self.field._serialize(None, None, object()) is None
+
+    def test_deserialize_enum(self):
+        assert self.field._deserialize('one', None, {}) == EnumTester.one
+
+    def test_deserialize_none(self):
+        assert self.field._deserialize(None, None, {}) is None
+
+    def test_deserialize_nonexistent_member(self):
+        with pytest.raises(ValidationError):
+            self.field._deserialize('fred', None, {})
+
+
+class TestStrictEnumFieldValue(object):
+
+    def test_deserialize_enum(self):
+        field = StrictEnumField(EnumTester, by_value=True)
+
+        assert field._deserialize(1, None, {}) == EnumTester.one
+
+    def test_serialize_enum(self):
+        field = EnumField(EnumTester, by_value=True)
+        assert field._serialize(EnumTester.one, None, object()) == 1
+
+    def test_serialize_none(self):
+        field = EnumField(EnumTester, by_value=True)
+        assert field._serialize(None, None, object()) is None
+
+    def test_deserialize_nonexistent_member(self):
+        field = EnumField(EnumTester, by_value=True)
+
+        with pytest.raises(ValidationError):
+            field._deserialize(4, None, {})
