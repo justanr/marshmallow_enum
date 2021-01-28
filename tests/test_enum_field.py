@@ -204,7 +204,7 @@ class TestCustomErrorMessage(object):
 
 class TestRegressions(object):
 
-    @pytest.mark.parametrize('bad_value', [object, object(), [], {}, 1, 3.4, False, ()])
+    @pytest.mark.parametrize('bad_value', [object, object(), {}, 1, 3.4, False, ()])
     def test_by_name_must_be_string(self, bad_value):
 
         class SomeEnum(Enum):

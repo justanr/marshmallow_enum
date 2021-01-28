@@ -29,11 +29,19 @@ class EnumField(Field):
     default_error_messages = {
         'by_name': 'Invalid enum member {input}',
         'by_value': 'Invalid enum value {input}',
-        'must_be_string': 'Enum name must be string'
+        'must_be_string_or_list': 'Enum must be string or list of strings'
     }
 
     def __init__(
-            self, enum, by_value=False, load_by=None, dump_by=None, error='', *args, **kwargs
+        self,
+        enum,
+        by_value=False,
+        load_by=None,
+        dump_by=None,
+        error='',
+        allow_none=None,
+        *args,
+        **kwargs
     ):
         self.enum = enum
         self.by_value = by_value
@@ -69,9 +77,9 @@ class EnumField(Field):
         self.load_by = load_by
         self.dump_by = dump_by
 
-        super(EnumField, self).__init__(*args, **kwargs)
+        super(EnumField, self).__init__(allow_none=allow_none, *args, **kwargs)
 
-    def _serialize(self, value, attr, obj):
+    def _serialize(self, value, attr, obj, **kwargs):
         if value is None:
             return None
         elif self.dump_by == LoadDumpOptions.value:
@@ -94,13 +102,23 @@ class EnumField(Field):
             self.fail('by_value', input=value, value=value)
 
     def _deserialize_by_name(self, value, attr, data):
-        if not isinstance(value, string_types):
-            self.fail('must_be_string', input=value, name=value)
+        # str
+        if isinstance(value, string_types):
+            try:
+                return getattr(self.enum, value)
+            except AttributeError:
+                self.fail('by_name', input=value, name=value)
 
-        try:
-            return getattr(self.enum, value)
-        except AttributeError:
-            self.fail('by_name', input=value, name=value)
+        # list
+        elif isinstance(value, list):
+            try:
+                return [getattr(self.enum, v) for v in value]
+            except AttributeError:
+                self.fail('by_name', input=value, name=value)
+
+        # validation
+        else:
+            self.fail('must_be_string_or_list', input=value, name=value)
 
     def fail(self, key, **kwargs):
         kwargs['values'] = ', '.join([text_type(mem.value) for mem in self.enum])
