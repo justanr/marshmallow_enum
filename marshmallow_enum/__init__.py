@@ -82,6 +82,8 @@ class EnumField(Field):
     def _deserialize(self, value, attr, data, **kwargs):
         if value is None:
             return None
+        elif type(value) == self.enum:
+            return value
         elif self.load_by == LoadDumpOptions.value:
             return self._deserialize_by_value(value, attr, data)
         else:
